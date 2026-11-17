@@ -43,9 +43,9 @@ fi
 
 # Save to file (append)
 if ! echo "
-
 ===== $(date +"%B %d, %Y at %H:%M:%S %p") =====
 $MESSAGE
+
 " >> "$FILE"; then
   echo -e "\033[0;31mFailed to save log to $FILE\033[0m"
   exit 1
