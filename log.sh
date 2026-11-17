@@ -1,8 +1,26 @@
 #!/usr/bin/env bash
 
-set -a
-source .env
-set +a
+# Resolve the directory where the script actually resides (resolving symlinks)
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SCRIPT_SOURCE" ]; do
+  SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_SOURCE")" >/dev/null 2>&1 && pwd)"
+  SCRIPT_SOURCE="$(readlink "$SCRIPT_SOURCE")"
+  [[ $SCRIPT_SOURCE != /* ]] && SCRIPT_SOURCE="$SCRIPT_DIR/$SCRIPT_SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_SOURCE")" >/dev/null 2>&1 && pwd)"
+
+if [[ -f "$SCRIPT_DIR/.env" ]]; then
+  set -a
+  source "$SCRIPT_DIR/.env"
+  set +a
+fi
+
+if [[ -z "$JOURNAL_DIR" ]]; then
+  echo -e "\033[0;31mError: JOURNAL_DIR is not set. Check $SCRIPT_DIR/.env\033[0m"
+  exit 1
+fi
+
+mkdir -p "$JOURNAL_DIR"
 
 MESSAGE=$1
 FILE="$JOURNAL_DIR/journal_$(date +%F).log"
@@ -24,11 +42,14 @@ if [[ -z "$MESSAGE" ]]; then
 fi
 
 # Save to file (append)
-echo "
+if ! echo "
 
 ===== $(date +"%B %d, %Y at %H:%M:%S %p") =====
 $MESSAGE
-" >> "$FILE"
+" >> "$FILE"; then
+  echo -e "\033[0;31mFailed to save log to $FILE\033[0m"
+  exit 1
+fi
 
 echo ""
 echo -e "\033[0;32mLog saved!\033[0m"
