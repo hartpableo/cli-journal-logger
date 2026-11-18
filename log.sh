@@ -22,16 +22,13 @@ fi
 
 mkdir -p "$JOURNAL_DIR"
 
-MESSAGE=$1
 FILE="$JOURNAL_DIR/journal_$(date +%F).log"
 
-# If input string is empty, prompt the user with multiline text input via "nano"
-if [[ -z "$MESSAGE" ]]; then
-	TMP_FILE=$(mktemp)
-	nano "$TMP_FILE"
-	MESSAGE=$(<"$TMP_FILE")
-  rm -f "$TMP_FILE"
-fi
+# Prompt the user with multiline text input via "nano"
+TMP_FILE=$(mktemp)
+nano "$TMP_FILE"
+MESSAGE=$(<"$TMP_FILE")
+rm -f "$TMP_FILE"
 
 # Return error if MESSAGE is still empty
 if [[ -z "$MESSAGE" ]]; then
@@ -49,6 +46,11 @@ $MESSAGE
 " >> "$FILE"; then
   echo -e "\033[0;31mFailed to save log to $FILE\033[0m"
   exit 1
+fi
+
+# Post to devnull if flagged
+if echo "$*" | grep -e "--devnull" -q; then
+  curl -fsSL https://dev-null.sh/commit | bash -s -- "$MESSAGE"
 fi
 
 echo ""
